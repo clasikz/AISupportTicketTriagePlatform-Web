@@ -37,3 +37,5 @@ next-env.d.ts
 
 # superpowers brainstorming
 .superpowers/
+# superpowers brainstorming
+.claude/
