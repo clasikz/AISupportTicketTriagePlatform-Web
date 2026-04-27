@@ -111,8 +111,8 @@ export interface Activity {
 }
 
 export interface TicketAttachment {
-  id: string;
-  ticketId: string;
+  id: string | null;
+  ticketId: string | null;
   fileName: string;
   contentType: string;
   size: number;
