@@ -110,17 +110,6 @@ export interface Activity {
   createdAt: string;
 }
 
-export interface TicketAttachment {
-  id: string | null;
-  ticketId: string | null;
-  fileName: string;
-  contentType: string;
-  size: number;
-  createdAt: string;
-  userId: string;
-  signedUrl: string;
-}
-
 export interface PaginatedResponse<T> {
   results: T[];
   count: number;

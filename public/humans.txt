@@ -1,0 +1,67 @@
+ ____        _ _ _   ____        _  __
+| __ ) _   _(_) | |_| __ ) _   _| |/ /
+|  _ \| | | | | | __| __ \| | | | ' /
+| |_) | |_| | | | |_| |_) | |_| | . \
+|____/ \__,_|_|_|\__|____/ \__, |_|\_\
+                           |___/
+
+A personal portfolio by Klent Roel S. Zarsuela.
+Built with care, coffee, and a lot of TypeScript.
+
+[humanstxt.org](http://humanstxt.org)
+
+_______________________________________________________________________________
+
+/* HUMAN */
+
+    Name: Klent Roel S. Zarsuela
+    Role: Full-Stack Web Developer
+    Email Address: krzarsuela@gmail.com
+    LinkedIn: linkedin.com/in/klentzarsuela/
+    GitHub: github.com/clasikz
+    Facebook: facebook.com/klentroel
+    Instagram: instagram.com/klnt.roel
+    Location: Metro Manila, Philippines
+
+_______________________________________________________________________________
+
+/* THANKS */
+
+    To my girlfriend — for the inspiration and motivation to keep building.
+
+_______________________________________________________________________________
+
+/* PROJECT */
+
+    Name: AI Support Ticket Triage Platform
+    Description: Portfolio project — support ticket system with AI-powered
+                 auto-triage using Groq / Llama 3.1. Tickets are automatically
+                 classified by category, priority, and assigned agent on creation.
+    Stack: Next.js 14, React, Tailwind CSS, TypeScript (frontend)
+           ASP.NET Core 8, Entity Framework Core, PostgreSQL (backend)
+    Hosted: Vercel (frontend) · Render.com (backend)
+
+_______________________________________________________________________________
+
+/* SITE */
+
+    Last update: 2026/04/25
+
+    Standards: HTML5, CSS3, TypeScript
+
+    Components: Next.js, React, Tailwind CSS, SCSS
+
+    Software: Visual Studio Code, Claude Code
+
+    Tools: SVG Viewer (svgviewer.dev)
+           Tailwind Cheat Sheet (flowbite.com/tools/tailwind-cheat-sheet)
+
+_______________________________________________________________________________
+
+/* FONTS */
+
+    Geist Sans
+    Geist Mono
+    JetBrains Mono
+
+_______________________________________________________________________________

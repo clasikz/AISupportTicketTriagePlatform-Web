@@ -1,15 +1,13 @@
 "use client";
 
-import { useState, useEffect, useRef, FormEvent } from "react";
+import { useState, useEffect, FormEvent } from "react";
 import { Ticket, AiResult, CreateTicketResponse } from "@/types";
 import { apiFetch } from "@/lib/api";
-import { useUploadAttachment } from "@/hooks/useUploadAttachment";
 import { endpoints } from "@/lib/endpoints";
 import { formatDueDate } from "@/lib/utils";
 import PriorityBadge from "./PriorityBadge";
 import CategoryBadge from "./CategoryBadge";
 import AgentChip from "./AgentChip";
-import AttachmentStrip, { AttachmentStripHandle } from "./AttachmentStrip";
 
 interface Props {
     onClose: () => void;
@@ -24,10 +22,6 @@ export default function CreateTicketModal({ onClose, onCreated }: Props) {
     const [created, setCreated] = useState<Ticket | null>(null);
     const [aiResult, setAiResult] = useState<AiResult | null>(null);
     const [visible, setVisible] = useState(false);
-    const [pendingFiles, setPendingFiles] = useState<File[]>([]);
-    const [uploadFailCount, setUploadFailCount] = useState(0);
-    const stripRef = useRef<AttachmentStripHandle>(null);
-    const { upload } = useUploadAttachment();
 
     useEffect(() => {
         const id = requestAnimationFrame(() => setVisible(true));
@@ -63,16 +57,6 @@ export default function CreateTicketModal({ onClose, onCreated }: Props) {
             if (!res.ok) throw new Error("Failed to create ticket");
             const response: CreateTicketResponse = await res.json();
 
-            // Upload pending attachments with the new ticket ID
-            if (pendingFiles.length > 0) {
-                let failures = 0;
-                for (const file of pendingFiles) {
-                    const { attachment } = await upload(file, response.ticket.id);
-                    if (!attachment) failures++;
-                }
-                setUploadFailCount(failures);
-            }
-
             setCreated(response.ticket);
             setAiResult(response.ai);
         } catch {
@@ -90,7 +74,6 @@ export default function CreateTicketModal({ onClose, onCreated }: Props) {
                 <div
                     className={`w-full max-w-lg bg-white rounded shadow-xl transition-all duration-200 ${visible ? "opacity-100 scale-100" : "opacity-0 scale-95"}`}
                 >
-                    {/* Header */}
                     <div className="flex items-center justify-between px-5 py-4 border-b border-[#dfe1e6]">
                         <h2 className="text-[15px] font-semibold text-[#172b4d]">
                             {created ? "Ticket Created" : "Create Ticket"}
@@ -104,7 +87,6 @@ export default function CreateTicketModal({ onClose, onCreated }: Props) {
                     </div>
 
                     {created ? (
-                        /* Success state */
                         <div className="px-5 py-5">
                             <h3 className="text-[14px] font-semibold text-[#172b4d] mb-3">
                                 {created.title}
@@ -139,7 +121,6 @@ export default function CreateTicketModal({ onClose, onCreated }: Props) {
                                 </div>
                             </div>
 
-                            {/* AI rationale */}
                             <div className="rounded border border-purple-100 bg-purple-50 px-3 py-3 space-y-2">
                                 <div className="flex items-center gap-1.5 text-[11px] font-semibold text-purple-700 uppercase tracking-wide">
                                     <span className="text-[9px]">✦</span> AI Triage Rationale
@@ -171,12 +152,6 @@ export default function CreateTicketModal({ onClose, onCreated }: Props) {
                                 )}
                             </div>
 
-                            {uploadFailCount > 0 && (
-                                <p className="mt-3 text-[12px] text-amber-700 bg-amber-50 border border-amber-200 rounded px-3 py-2">
-                                    Ticket created, but {uploadFailCount} file{uploadFailCount > 1 ? "s" : ""} failed to upload.
-                                </p>
-                            )}
-
                             <button
                                 onClick={onCreated}
                                 className="mt-4 w-full h-9 bg-primary hover:bg-primary-dark text-white text-[13px] font-medium rounded transition-colors"
@@ -185,7 +160,6 @@ export default function CreateTicketModal({ onClose, onCreated }: Props) {
                             </button>
                         </div>
                     ) : (
-                        /* Create form */
                         <form onSubmit={handleSubmit} className="px-5 py-5 space-y-4">
                             <div>
                                 <label className="block text-[11px] font-semibold text-[#5e6c84] uppercase tracking-wide mb-1.5">
@@ -217,7 +191,6 @@ export default function CreateTicketModal({ onClose, onCreated }: Props) {
                                     placeholder="Detailed description of the issue..."
                                     rows={5}
                                     className="w-full px-3 py-2 border border-[#dfe1e6] rounded text-[13px] text-[#172b4d] placeholder:text-[#97a0af] focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 resize-none"
-                                    onPaste={(e) => stripRef.current?.handlePaste(e)}
                                 />
                                 {descError && (
                                     <p className="text-[11px] text-red-500 mt-1">{descError}</p>
@@ -225,16 +198,6 @@ export default function CreateTicketModal({ onClose, onCreated }: Props) {
                                 <p className="text-[11px] text-[#97a0af] mt-1 text-right">
                                     {description.length}/4000
                                 </p>
-                            </div>
-
-                            <div>
-                                <label className="block text-[11px] font-semibold text-[#5e6c84] uppercase tracking-wide mb-1.5">
-                                    Attachments
-                                </label>
-                                <AttachmentStrip
-                                    ref={stripRef}
-                                    onPendingFilesChange={setPendingFiles}
-                                />
                             </div>
 
                             <div className="flex items-center gap-2 px-3 py-2 bg-purple-50 rounded text-[12px] text-purple-700">

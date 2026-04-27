@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Ticket, Comment, Activity, TicketAttachment } from "@/types";
+import { Ticket, Comment, Activity } from "@/types";
 import { apiFetch } from "@/lib/api";
 import { endpoints } from "@/lib/endpoints";
 import { normalizeTicket, unwrapTicket } from "@/lib/utils";
@@ -10,7 +10,6 @@ interface TicketDetail {
   ticket: Ticket;
   comments: Comment[];
   activities: Activity[];
-  attachments: TicketAttachment[];
 }
 
 export function useTicket(id: string) {
@@ -30,19 +29,16 @@ export function useTicket(id: string) {
 
       if (!ticketRes.ok) throw new Error("Failed to load ticket");
 
-      const [rawResponse, comments, activities] = await Promise.all([
-        ticketRes.json() as Promise<{ ticket: unknown; ai: unknown; attachments?: TicketAttachment[] }>,
-        commentsRes.ok ? (commentsRes.json() as Promise<Comment[]>) : Promise.resolve([]),
-        activitiesRes.ok ? (activitiesRes.json() as Promise<Activity[]>) : Promise.resolve([]),
+      const [rawResponse, commentsJson, activitiesJson] = await Promise.all([
+        ticketRes.json() as Promise<{ ticket: unknown; ai: unknown }>,
+        commentsRes.ok ? commentsRes.json() : Promise.resolve({ results: [] }),
+        activitiesRes.ok ? activitiesRes.json() : Promise.resolve({ results: [] }),
       ]);
-
-      const attachments: TicketAttachment[] = rawResponse.attachments ?? [];
 
       setData({
         ticket: normalizeTicket(unwrapTicket(rawResponse)),
-        comments,
-        activities,
-        attachments,
+        comments: Array.isArray(commentsJson) ? commentsJson : (commentsJson.results ?? []),
+        activities: Array.isArray(activitiesJson) ? activitiesJson : (activitiesJson.results ?? []),
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error");

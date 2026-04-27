@@ -11,7 +11,6 @@ export const endpoints = {
   assignTicket: (id: string) => `${BASE}/api/tickets/${id}/assign`,
   comments: (id: string) => `${BASE}/api/tickets/${id}/comments`,
   activities: (id: string) => `${BASE}/api/tickets/${id}/activities`,
-  attachments: `${BASE}/api/tickets/attachments`,
-  stats: `${BASE}/api/tickets/stats`,
+stats: `${BASE}/api/tickets/stats`,
   dashboard: `${BASE}/api/tickets/dashboard`,
 };

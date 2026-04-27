@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Ticket, TicketStatus, getValidTransitions, STATUS_LABELS } from "@/types";
 import { useDragResize } from "@/hooks/useDragResize";
-import { apiFetch, ApiError } from "@/lib/api";
+import { apiFetch } from "@/lib/api";
 import { endpoints } from "@/lib/endpoints";
 import { useTicket } from "@/hooks/useTicket";
 import {
@@ -18,7 +18,6 @@ import PriorityBadge from "./PriorityBadge";
 import CategoryBadge from "./CategoryBadge";
 import AgentChip from "./AgentChip";
 import SlideOverSkeleton from "@/components/skeletons/SlideOverSkeleton";
-import AttachmentStrip, { AttachmentStripHandle } from "./AttachmentStrip";
 
 interface Props {
     ticket: Ticket;
@@ -42,7 +41,6 @@ export default function TicketSlideOver({ ticket, onClose, onUpdated, onMutated 
     const [fullscreen, setFullscreen] = useState(false);
     const statusRef = useRef<HTMLDivElement>(null);
     const reassignRef = useRef<HTMLDivElement>(null);
-    const stripRef = useRef<AttachmentStripHandle>(null);
     const { size: panelW, startDrag: startPanelDrag } = useDragResize(
         "slideover-width",
         540,
@@ -143,11 +141,14 @@ export default function TicketSlideOver({ ticket, onClose, onUpdated, onMutated 
                 method: "POST",
                 body: JSON.stringify({ content: commentText.trim() }),
             });
-            if (!res.ok) throw new Error();
+            if (!res.ok) {
+                const errText = await res.text().catch(() => "");
+                throw new Error(errText || "Failed to add comment");
+            }
             setCommentText("");
-            refetch();
-        } catch {
-            showToast("Failed to add comment");
+            await refetch();
+        } catch (err) {
+            showToast(err instanceof Error ? err.message : "Failed to add comment");
         } finally {
             setSubmittingComment(false);
         }
@@ -155,16 +156,15 @@ export default function TicketSlideOver({ ticket, onClose, onUpdated, onMutated 
 
     const ticketData = data?.ticket ?? ticket;
     const ticketNum = ticket.id.slice(-4).toUpperCase();
+    const userComments = (data?.comments ?? []).filter((c) => c.userId !== "ai");
 
     return (
         <>
-            {/* Backdrop */}
             <div
                 className={`fixed inset-0 bg-[#091e42]/30 z-40 transition-opacity duration-300 ${visible ? "opacity-100" : "opacity-0"}`}
                 onClick={onClose}
             />
 
-            {/* Panel */}
             <div
                 style={fullscreen ? {} : { width: panelW }}
                 className={`fixed bg-white border-l border-[#dfe1e6] shadow-xl z-50 flex flex-col transition-all duration-300 ease-out ${
@@ -173,14 +173,13 @@ export default function TicketSlideOver({ ticket, onClose, onUpdated, onMutated 
                         : `top-12 right-0 bottom-0 ${visible ? "translate-x-0" : "translate-x-full"}`
                 }`}
             >
-                {/* Left-edge drag handle */}
                 <div
                     onMouseDown={(e) => startPanelDrag(e, "left")}
                     className="absolute top-0 left-0 bottom-0 w-1 cursor-col-resize group z-10"
                 >
                     <div className="absolute inset-0 group-hover:bg-primary/25 transition-colors" />
                 </div>
-                {/* Header */}
+
                 <div className="flex items-center justify-between px-5 py-3.5 border-b border-[#dfe1e6] flex-shrink-0">
                     <span className="text-[11px] text-[#5e6c84] font-mono">TT-{ticketNum}</span>
                     <div className="flex items-center gap-2">
@@ -190,27 +189,11 @@ export default function TicketSlideOver({ ticket, onClose, onUpdated, onMutated 
                             className="w-7 h-7 rounded border border-[#dfe1e6] bg-white hover:bg-[#f4f5f7] text-[#5e6c84] flex items-center justify-center transition-colors"
                         >
                             {fullscreen ? (
-                                <svg
-                                    width="13"
-                                    height="13"
-                                    viewBox="0 0 16 16"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    strokeWidth="1.6"
-                                    strokeLinecap="round"
-                                >
+                                <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
                                     <path d="M6 2H2v4M10 2h4v4M6 14H2v-4M10 14h4v-4" />
                                 </svg>
                             ) : (
-                                <svg
-                                    width="13"
-                                    height="13"
-                                    viewBox="0 0 16 16"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    strokeWidth="1.6"
-                                    strokeLinecap="round"
-                                >
+                                <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
                                     <path d="M2 6V2h4M14 6V2h-4M2 10v4h4M14 10v4h-4" />
                                 </svg>
                             )}
@@ -224,13 +207,11 @@ export default function TicketSlideOver({ ticket, onClose, onUpdated, onMutated 
                     </div>
                 </div>
 
-                {/* Body */}
                 <div className="flex-1 overflow-y-auto">
                     {loading ? (
                         <SlideOverSkeleton />
                     ) : (
                         <>
-                            {/* Title + AI banner */}
                             <div className="px-5 py-4 border-b border-[#f4f5f7]">
                                 <h2 className="text-[16px] font-semibold text-[#172b4d] leading-snug mb-3">
                                     {ticketData.title}
@@ -250,27 +231,21 @@ export default function TicketSlideOver({ ticket, onClose, onUpdated, onMutated 
                                                 {ticketData.ai.comments}
                                             </p>
                                         )}
-                                        {ticketData.ai?.solutions &&
-                                            ticketData.ai.solutions.length > 0 && (
-                                                <div>
-                                                    <div className="text-[10px] font-semibold text-purple-600 uppercase tracking-wide mb-1.5">
-                                                        Suggested steps
-                                                    </div>
-                                                    <ul className="space-y-1">
-                                                        {ticketData.ai.solutions.map((s, i) => (
-                                                            <li
-                                                                key={i}
-                                                                className="flex items-start gap-1.5 text-[12px] text-purple-800"
-                                                            >
-                                                                <span className="text-purple-400 flex-shrink-0 mt-0.5">
-                                                                    ›
-                                                                </span>
-                                                                {s}
-                                                            </li>
-                                                        ))}
-                                                    </ul>
+                                        {ticketData.ai?.solutions && ticketData.ai.solutions.length > 0 && (
+                                            <div>
+                                                <div className="text-[10px] font-semibold text-purple-600 uppercase tracking-wide mb-1.5">
+                                                    Suggested steps
                                                 </div>
-                                            )}
+                                                <ul className="space-y-1">
+                                                    {ticketData.ai.solutions.map((s, i) => (
+                                                        <li key={i} className="flex items-start gap-1.5 text-[12px] text-purple-800">
+                                                            <span className="text-purple-400 flex-shrink-0 mt-0.5">›</span>
+                                                            {s}
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            </div>
+                                        )}
                                         <div className="flex flex-wrap gap-1.5 pt-0.5">
                                             <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[12px] font-medium bg-purple-100 text-purple-700 hover:bg-purple-200 hover:text-purple-900 transition-colors duration-150 cursor-default">
                                                 {ticketData.category}
@@ -288,41 +263,28 @@ export default function TicketSlideOver({ ticket, onClose, onUpdated, onMutated 
                                 </div>
                             </div>
 
-                            {/* Meta grid */}
                             <div className="px-5 py-4 border-b border-[#f4f5f7]">
                                 <div className="grid grid-cols-2 gap-3">
                                     <div>
-                                        <div className="text-[11px] font-semibold text-[#5e6c84] uppercase tracking-[0.06em] mb-1.5">
-                                            Status
-                                        </div>
+                                        <div className="text-[11px] font-semibold text-[#5e6c84] uppercase tracking-[0.06em] mb-1.5">Status</div>
                                         <StatusBadge status={ticketData.status as TicketStatus} />
                                     </div>
                                     <div>
-                                        <div className="text-[11px] font-semibold text-[#5e6c84] uppercase tracking-[0.06em] mb-1.5">
-                                            Priority
-                                        </div>
+                                        <div className="text-[11px] font-semibold text-[#5e6c84] uppercase tracking-[0.06em] mb-1.5">Priority</div>
                                         <PriorityBadge priority={ticketData.priority} />
                                     </div>
                                     <div>
-                                        <div className="text-[11px] font-semibold text-[#5e6c84] uppercase tracking-[0.06em] mb-1.5">
-                                            Category
-                                        </div>
+                                        <div className="text-[11px] font-semibold text-[#5e6c84] uppercase tracking-[0.06em] mb-1.5">Category</div>
                                         <CategoryBadge category={ticketData.category} />
                                     </div>
                                     <div>
-                                        <div className="text-[11px] font-semibold text-[#5e6c84] uppercase tracking-[0.06em] mb-1.5">
-                                            Assigned To
-                                        </div>
+                                        <div className="text-[11px] font-semibold text-[#5e6c84] uppercase tracking-[0.06em] mb-1.5">Assigned To</div>
                                         <AgentChip agent={ticketData.assignedTo} />
                                     </div>
                                     <div>
-                                        <div className="text-[11px] font-semibold text-[#5e6c84] uppercase tracking-[0.06em] mb-1.5">
-                                            Due Date
-                                        </div>
+                                        <div className="text-[11px] font-semibold text-[#5e6c84] uppercase tracking-[0.06em] mb-1.5">Due Date</div>
                                         {ticketData.dueDate ? (
-                                            <span
-                                                className={`text-[13px] ${getDueDateColor(ticketData.dueDate)}`}
-                                            >
+                                            <span className={`text-[13px] ${getDueDateColor(ticketData.dueDate)}`}>
                                                 {formatDueDate(ticketData.dueDate)}
                                             </span>
                                         ) : (
@@ -330,59 +292,21 @@ export default function TicketSlideOver({ ticket, onClose, onUpdated, onMutated 
                                         )}
                                     </div>
                                     <div>
-                                        <div className="text-[11px] font-semibold text-[#5e6c84] uppercase tracking-[0.06em] mb-1.5">
-                                            Created
-                                        </div>
+                                        <div className="text-[11px] font-semibold text-[#5e6c84] uppercase tracking-[0.06em] mb-1.5">Created</div>
                                         <span className="text-[13px] text-[#5e6c84]">
-                                            {formatDateTime(ticketData.createdAt)} ·{" "}
-                                            {formatRelativeTime(ticketData.createdAt)}
+                                            {formatDateTime(ticketData.createdAt)} · {formatRelativeTime(ticketData.createdAt)}
                                         </span>
                                     </div>
                                 </div>
                             </div>
 
-                            {/* Description */}
                             <div className="px-5 py-4 border-b border-[#f4f5f7]">
-                                <div className="text-[11px] font-semibold text-[#5e6c84] uppercase tracking-[0.06em] mb-2">
-                                    Description
-                                </div>
+                                <div className="text-[11px] font-semibold text-[#5e6c84] uppercase tracking-[0.06em] mb-2">Description</div>
                                 <p className="text-[13px] text-[#42526e] leading-relaxed whitespace-pre-wrap">
                                     {ticketData.description}
                                 </p>
                             </div>
 
-                            {/* Attachments */}
-                            {(data?.attachments?.length ?? 0) > 0 && (
-                                <div className="px-5 py-4 border-b border-[#f4f5f7]">
-                                    <div className="text-[11px] font-semibold text-[#5e6c84] uppercase tracking-[0.06em] mb-2">
-                                        Attachments ({data!.attachments.length})
-                                    </div>
-                                    <div className="flex flex-wrap gap-2">
-                                        {data!.attachments.map((a) => (
-                                            <a
-                                                key={a.id ?? a.fileName}
-                                                href={a.signedUrl}
-                                                target="_blank"
-                                                rel="noreferrer"
-                                                title={a.fileName}
-                                                className="group relative w-16 h-16 rounded border border-[#dfe1e6] bg-[#f4f5f7] flex items-center justify-center overflow-hidden hover:border-primary transition-colors"
-                                            >
-                                                {a.contentType.startsWith("image/") ? (
-                                                    // eslint-disable-next-line @next/next/no-img-element
-                                                    <img src={a.signedUrl} alt={a.fileName} className="w-full h-full object-cover" />
-                                                ) : (
-                                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#97a0af" strokeWidth="1.5" strokeLinecap="round">
-                                                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                                                        <polyline points="14 2 14 8 20 8" />
-                                                    </svg>
-                                                )}
-                                            </a>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* Tabs */}
                             <div className="flex border-b border-[#dfe1e6] px-5">
                                 <button
                                     onClick={() => setTab("comments")}
@@ -392,8 +316,7 @@ export default function TicketSlideOver({ ticket, onClose, onUpdated, onMutated 
                                             : "text-[#5e6c84] border-transparent hover:text-[#172b4d]"
                                     }`}
                                 >
-                                    Comments (
-                                    {data?.comments.filter((c) => c.userId !== "ai").length ?? 0})
+                                    Comments ({userComments.length})
                                 </button>
                                 <button
                                     onClick={() => setTab("activity")}
@@ -407,14 +330,10 @@ export default function TicketSlideOver({ ticket, onClose, onUpdated, onMutated 
                                 </button>
                             </div>
 
-                            {/* Tab content */}
                             <div key={tab} className="px-5 py-4 animate-fade-in">
                                 {tab === "comments" && (
                                     <>
-                                        <form
-                                            onSubmit={handleAddComment}
-                                            className="flex gap-2.5 mb-4"
-                                        >
+                                        <form onSubmit={handleAddComment} className="flex gap-2.5 mb-4">
                                             <div className="w-7 h-7 rounded-full bg-cyan-500 flex-shrink-0 flex items-center justify-center text-white text-[10px] font-bold mt-0.5">
                                                 U
                                             </div>
@@ -422,7 +341,6 @@ export default function TicketSlideOver({ ticket, onClose, onUpdated, onMutated 
                                                 <textarea
                                                     value={commentText}
                                                     onChange={(e) => setCommentText(e.target.value)}
-                                                    onPaste={(e) => stripRef.current?.handlePaste(e)}
                                                     placeholder="Add a comment..."
                                                     rows={2}
                                                     className="w-full px-3 py-2 border border-[#dfe1e6] rounded text-[13px] text-[#172b4d] placeholder:text-[#97a0af] bg-[#fafbfc] focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 resize-none"
@@ -439,55 +357,43 @@ export default function TicketSlideOver({ ticket, onClose, onUpdated, onMutated 
                                             </div>
                                         </form>
 
-                                        <AttachmentStrip
-                                            ref={stripRef}
-                                            ticketId={ticket.id}
-                                            initialAttachments={data?.attachments ?? []}
-                                            className="mb-4"
-                                        />
-
-                                        {(data?.comments.filter((c) => c.userId !== "ai").length ??
-                                            0) === 0 ? (
+                                        {userComments.length === 0 ? (
                                             <p className="text-[13px] text-[#5e6c84] text-center py-4">
                                                 No comments yet
                                             </p>
                                         ) : (
-                                            data?.comments
-                                                .filter((c) => c.userId !== "ai")
-                                                .map((c) => (
-                                                    <div key={c.id} className="flex gap-2.5 mb-4">
-                                                        <div className="w-7 h-7 rounded-full bg-cyan-500 flex-shrink-0 flex items-center justify-center text-white text-[10px] font-bold mt-0.5">
-                                                            {c.userId.slice(0, 2).toUpperCase()}
-                                                        </div>
-                                                        <div>
-                                                            <div>
-                                                                <span className="text-[12px] font-semibold text-[#172b4d]">
-                                                                    {c.userId}
-                                                                </span>
-                                                                <span className="text-[11px] text-[#8993a4] ml-2">
-                                                                    {formatRelativeTime(
-                                                                        c.createdAt,
-                                                                    )}
-                                                                </span>
-                                                            </div>
-                                                            <p className="text-[13px] text-[#42526e] mt-0.5 leading-relaxed">
-                                                                {c.content}
-                                                            </p>
-                                                        </div>
+                                            userComments.map((c) => (
+                                                <div key={c.id} className="flex gap-2.5 mb-4">
+                                                    <div className="w-7 h-7 rounded-full bg-cyan-500 flex-shrink-0 flex items-center justify-center text-white text-[10px] font-bold mt-0.5">
+                                                        {c.userId.slice(0, 2).toUpperCase()}
                                                     </div>
-                                                ))
+                                                    <div>
+                                                        <div>
+                                                            <span className="text-[12px] font-semibold text-[#172b4d]">
+                                                                {c.userId}
+                                                            </span>
+                                                            <span className="text-[11px] text-[#8993a4] ml-2">
+                                                                {formatRelativeTime(c.createdAt)}
+                                                            </span>
+                                                        </div>
+                                                        <p className="text-[13px] text-[#42526e] mt-0.5 leading-relaxed">
+                                                            {c.content}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            ))
                                         )}
                                     </>
                                 )}
 
                                 {tab === "activity" && (
                                     <>
-                                        {data?.activities.length === 0 ? (
+                                        {(data?.activities ?? []).length === 0 ? (
                                             <p className="text-[13px] text-[#5e6c84] text-center py-4">
                                                 No activity yet
                                             </p>
                                         ) : (
-                                            data?.activities.map((a) => (
+                                            (data?.activities ?? []).map((a) => (
                                                 <div key={a.id} className="flex gap-2.5 mb-3">
                                                     <div className="flex flex-col items-center pt-0.5">
                                                         <div className="w-5 h-5 rounded-full bg-[#f4f5f7] border border-[#dfe1e6] flex items-center justify-center flex-shrink-0">
@@ -496,48 +402,16 @@ export default function TicketSlideOver({ ticket, onClose, onUpdated, onMutated 
                                                     </div>
                                                     <div className="pt-0.5">
                                                         <p className="text-[12px] text-[#42526e] leading-relaxed">
-                                                            <span className="font-medium text-[#172b4d]">
-                                                                {a.userId}
-                                                            </span>{" "}
+                                                            <span className="font-medium text-[#172b4d]">{a.userId}</span>{" "}
                                                             {a.action === "StatusChanged" && (
-                                                                <>
-                                                                    changed status from{" "}
-                                                                    <span className="font-medium">
-                                                                        {a.fromValue}
-                                                                    </span>{" "}
-                                                                    to{" "}
-                                                                    <span className="font-medium">
-                                                                        {a.toValue}
-                                                                    </span>
-                                                                </>
+                                                                <>changed status from <span className="font-medium">{a.fromValue}</span> to <span className="font-medium">{a.toValue}</span></>
                                                             )}
-                                                            {a.action === "CommentAdded" && (
-                                                                <>added a comment</>
-                                                            )}
+                                                            {a.action === "CommentAdded" && <>added a comment</>}
                                                             {a.action === "Reassigned" && (
-                                                                <>
-                                                                    reassigned from{" "}
-                                                                    <span className="font-medium">
-                                                                        {a.fromValue}
-                                                                    </span>{" "}
-                                                                    to{" "}
-                                                                    <span className="font-medium">
-                                                                        {a.toValue}
-                                                                    </span>
-                                                                </>
+                                                                <>reassigned from <span className="font-medium">{a.fromValue}</span> to <span className="font-medium">{a.toValue}</span></>
                                                             )}
-                                                            {a.action === "AiTriage" && (
-                                                                <>
-                                                                    ran AI triage and classified
-                                                                    this ticket
-                                                                </>
-                                                            )}
-                                                            {![
-                                                                "StatusChanged",
-                                                                "CommentAdded",
-                                                                "Reassigned",
-                                                                "AiTriage",
-                                                            ].includes(a.action) && <>{a.action}</>}
+                                                            {a.action === "AiTriage" && <>ran AI triage and classified this ticket</>}
+                                                            {!["StatusChanged", "CommentAdded", "Reassigned", "AiTriage"].includes(a.action) && <>{a.action}</>}
                                                         </p>
                                                         <span className="text-[11px] text-[#97a0af]">
                                                             {formatRelativeTime(a.createdAt)}
@@ -553,48 +427,26 @@ export default function TicketSlideOver({ ticket, onClose, onUpdated, onMutated 
                     )}
                 </div>
 
-                {/* Footer actions */}
                 <div className="px-5 py-3 border-t border-[#dfe1e6] flex items-center gap-2 flex-shrink-0">
-                    {/* Status transition */}
                     {isTerminal ? (
                         <StatusBadge status={currentStatus as TicketStatus} />
                     ) : (
                         <div ref={statusRef} className="relative">
                             <button
                                 disabled={statusSubmitting}
-                                onClick={() => {
-                                    setStatusOpen((o) => !o);
-                                    setReassignOpen(false);
-                                }}
+                                onClick={() => { setStatusOpen((o) => !o); setReassignOpen(false); }}
                                 className="h-8 px-3 bg-primary hover:bg-primary-dark text-white text-[13px] font-medium rounded transition-colors disabled:opacity-50 flex items-center gap-1"
                             >
                                 Update status
-                                <svg
-                                    width="10"
-                                    height="10"
-                                    viewBox="0 0 10 10"
-                                    fill="white"
-                                    className={`transition-transform duration-150 ${statusOpen ? "rotate-180" : ""}`}
-                                >
-                                    <path
-                                        d="M2 3.5l3 3 3-3"
-                                        stroke="white"
-                                        strokeWidth="1.5"
-                                        strokeLinecap="round"
-                                        fill="none"
-                                    />
+                                <svg width="10" height="10" viewBox="0 0 10 10" fill="white" className={`transition-transform duration-150 ${statusOpen ? "rotate-180" : ""}`}>
+                                    <path d="M2 3.5l3 3 3-3" stroke="white" strokeWidth="1.5" strokeLinecap="round" fill="none" />
                                 </svg>
                             </button>
-                            <div
-                                className={`absolute bottom-full left-0 mb-1 w-52 bg-white border border-[#dfe1e6] rounded shadow-lg z-50 py-1 transition-all duration-150 origin-bottom ${statusOpen ? "opacity-100 scale-100 translate-y-0" : "opacity-0 scale-95 translate-y-1 pointer-events-none"}`}
-                            >
+                            <div className={`absolute bottom-full left-0 mb-1 w-52 bg-white border border-[#dfe1e6] rounded shadow-lg z-50 py-1 transition-all duration-150 origin-bottom ${statusOpen ? "opacity-100 scale-100 translate-y-0" : "opacity-0 scale-95 translate-y-1 pointer-events-none"}`}>
                                 {validTransitions.map((s) => (
                                     <button
                                         key={s}
-                                        onClick={() => {
-                                            handleStatusChange(s);
-                                            setStatusOpen(false);
-                                        }}
+                                        onClick={() => { handleStatusChange(s); setStatusOpen(false); }}
                                         className="w-full text-left px-3 py-2 text-[13px] text-[#172b4d] hover:bg-[#f4f5f7] transition-colors"
                                     >
                                         {STATUS_LABELS[s]}
@@ -604,43 +456,22 @@ export default function TicketSlideOver({ ticket, onClose, onUpdated, onMutated 
                         </div>
                     )}
 
-                    {/* Reassign */}
                     <div ref={reassignRef} className="relative">
                         <button
                             disabled={assignSubmitting}
-                            onClick={() => {
-                                setReassignOpen((o) => !o);
-                                setStatusOpen(false);
-                            }}
+                            onClick={() => { setReassignOpen((o) => !o); setStatusOpen(false); }}
                             className="h-8 px-3 bg-white border border-[#dfe1e6] text-[#42526e] text-[13px] font-medium rounded hover:bg-[#f4f5f7] transition-colors disabled:opacity-50 flex items-center gap-1"
                         >
                             Reassign
-                            <svg
-                                width="10"
-                                height="10"
-                                viewBox="0 0 10 10"
-                                fill="none"
-                                className={`transition-transform duration-150 ${reassignOpen ? "rotate-180" : ""}`}
-                            >
-                                <path
-                                    d="M2 3.5l3 3 3-3"
-                                    stroke="#42526e"
-                                    strokeWidth="1.5"
-                                    strokeLinecap="round"
-                                    fill="none"
-                                />
+                            <svg width="10" height="10" viewBox="0 0 10 10" fill="none" className={`transition-transform duration-150 ${reassignOpen ? "rotate-180" : ""}`}>
+                                <path d="M2 3.5l3 3 3-3" stroke="#42526e" strokeWidth="1.5" strokeLinecap="round" fill="none" />
                             </svg>
                         </button>
-                        <div
-                            className={`absolute bottom-full left-0 mb-1 w-44 bg-white border border-[#dfe1e6] rounded shadow-lg z-50 py-1 transition-all duration-150 origin-bottom ${reassignOpen ? "opacity-100 scale-100 translate-y-0" : "opacity-0 scale-95 translate-y-1 pointer-events-none"}`}
-                        >
+                        <div className={`absolute bottom-full left-0 mb-1 w-44 bg-white border border-[#dfe1e6] rounded shadow-lg z-50 py-1 transition-all duration-150 origin-bottom ${reassignOpen ? "opacity-100 scale-100 translate-y-0" : "opacity-0 scale-95 translate-y-1 pointer-events-none"}`}>
                             {AGENT_OPTIONS.map((agent) => (
                                 <button
                                     key={agent}
-                                    onClick={() => {
-                                        handleAssign(agent);
-                                        setReassignOpen(false);
-                                    }}
+                                    onClick={() => { handleAssign(agent); setReassignOpen(false); }}
                                     className="w-full text-left px-3 py-2 text-[13px] text-[#172b4d] hover:bg-[#f4f5f7] transition-colors"
                                 >
                                     {agent}
@@ -649,7 +480,6 @@ export default function TicketSlideOver({ ticket, onClose, onUpdated, onMutated 
                         </div>
                     </div>
 
-                    {/* Delete */}
                     <button
                         onClick={handleDelete}
                         className="h-8 px-3 ml-auto bg-white border border-red-200 text-red-600 text-[13px] font-medium rounded hover:bg-red-50 transition-colors"
@@ -658,7 +488,6 @@ export default function TicketSlideOver({ ticket, onClose, onUpdated, onMutated 
                     </button>
                 </div>
 
-                {/* Toast */}
                 {toast && (
                     <div className="absolute bottom-16 left-1/2 -translate-x-1/2 px-4 py-2 bg-[#172b4d] text-white text-[13px] rounded shadow-lg whitespace-nowrap">
                         {toast}
