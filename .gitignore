@@ -37,5 +37,6 @@ next-env.d.ts
 
 # superpowers brainstorming
 .superpowers/
-# superpowers brainstorming
-.claude/
+
+.claude/settings.local.json
+

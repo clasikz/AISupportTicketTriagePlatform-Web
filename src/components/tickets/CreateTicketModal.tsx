@@ -4,7 +4,7 @@ import { useState, useEffect, FormEvent } from "react";
 import { Ticket, AiResult, CreateTicketResponse } from "@/types";
 import { apiFetch } from "@/lib/api";
 import { endpoints } from "@/lib/endpoints";
-import { formatDueDate } from "@/lib/utils";
+import { formatDueDate, normalizeTicket } from "@/lib/utils";
 import PriorityBadge from "./PriorityBadge";
 import CategoryBadge from "./CategoryBadge";
 import AgentChip from "./AgentChip";
@@ -57,7 +57,7 @@ export default function CreateTicketModal({ onClose, onCreated }: Props) {
             if (!res.ok) throw new Error("Failed to create ticket");
             const response: CreateTicketResponse = await res.json();
 
-            setCreated(response.ticket);
+            setCreated(normalizeTicket(response.ticket));
             setAiResult(response.ai);
         } catch {
             setError("Failed to create ticket. Please try again.");
