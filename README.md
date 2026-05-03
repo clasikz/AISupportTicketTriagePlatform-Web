@@ -1,6 +1,6 @@
-# AI Support Ticket Triage Platform - Web
+# TT Desk - Web
 
-Frontend for the AI Support Ticket Triage Platform. A ticket management interface with AI-assisted triage, real-time filtering, and an analytics dashboard. Built as a portfolio project demonstrating Next.js app router patterns, JWT auth flows, and composable UI design.
+Frontend for TT Desk - AI Support Platform. A ticket management interface with AI-assisted triage, real-time filtering, and an analytics dashboard. Built as a portfolio project demonstrating Next.js app router patterns, JWT auth flows, and composable UI design.
 
 ## Tech stack
 
@@ -14,23 +14,23 @@ Frontend for the AI Support Ticket Triage Platform. A ticket management interfac
 
 1. Install dependencies:
 
-   ```bash
-   npm install
-   ```
+    ```bash
+    npm install
+    ```
 
 2. Create a `.env.local` file in the project root:
 
-   ```env
-   NEXT_PUBLIC_BACKEND_URL=https://localhost:7185
-   ```
+    ```env
+    NEXT_PUBLIC_BACKEND_URL=https://localhost:7185
+    ```
 
-   Point this at your running instance of the [backend API](https://github.com/krzarsuela/AISupportTicketTriagePlatform).
+    Point this at your running instance of the [backend API](https://github.com/krzarsuela/TTDesk).
 
 3. Start the development server:
 
-   ```bash
-   npm run dev
-   ```
+    ```bash
+    npm run dev
+    ```
 
 4. Open [http://localhost:3000](http://localhost:3000).
 
@@ -78,9 +78,9 @@ src/
 
 ## Environment variables
 
-| Variable | Required | Description |
-|---|---|---|
-| `NEXT_PUBLIC_BACKEND_URL` | Yes | Base URL of the backend API (e.g. `https://localhost:7185`) |
+| Variable                  | Required | Description                                                 |
+| ------------------------- | -------- | ----------------------------------------------------------- |
+| `NEXT_PUBLIC_BACKEND_URL` | Yes      | Base URL of the backend API (e.g. `https://localhost:7185`) |
 
 ## Deployment
 
@@ -93,7 +93,7 @@ npm start       # production server
 
 ## Backend
 
-The companion backend API lives at [AISupportTicketTriagePlatform](https://github.com/krzarsuela/AISupportTicketTriagePlatform) (ASP.NET Core 8, PostgreSQL, Groq AI).
+The companion backend API lives at [TTDesk](https://github.com/krzarsuela/TTDesk) (ASP.NET Core 8, PostgreSQL, Groq AI).
 
 ## Author
 

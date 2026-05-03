@@ -33,7 +33,7 @@ _______________________________________________________________________________
 
 /* PROJECT */
 
-    Name: AI Support Ticket Triage Platform
+    Name: TT Desk - AI Support Platform
     Description: Portfolio project — support ticket system with AI-powered
                  auto-triage using Groq / Llama 3.1. Tickets are automatically
                  classified by category, priority, and assigned agent on creation.

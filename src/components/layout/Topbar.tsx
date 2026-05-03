@@ -12,7 +12,7 @@ export default function Topbar() {
                 <div className="w-[26px] h-[26px] bg-white rounded flex items-center justify-center text-primary text-[11px] font-extrabold flex-shrink-0">
                     TT
                 </div>
-                <span className="text-white font-bold text-sm tracking-tight">TicketTriage</span>
+                <span className="text-white font-bold text-sm tracking-tight">TT Desk</span>
             </div>
 
             <nav className="flex items-center gap-0.5">

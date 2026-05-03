@@ -52,7 +52,7 @@ export default function Sidebar({ width, onStartDrag }: Props) {
                     </div>
                     <div className="overflow-hidden">
                         <div className="text-[13px] font-semibold text-[#172b4d] leading-tight truncate">
-                            TicketTriage
+                            TT Side Panel
                         </div>
                         <div className="text-[11px] text-[#5e6c84] mt-0.5">Support Project</div>
                     </div>

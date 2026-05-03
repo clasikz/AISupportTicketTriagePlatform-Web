@@ -45,7 +45,9 @@ export default function LoginPage() {
             {isWarmingUp && (
                 <div className="flex items-center gap-2.5 mb-3 px-3.5 py-2.5 bg-yellow-50 border border-yellow-300 rounded text-[13px] text-yellow-800">
                     <div className="w-4 h-4 border-2 border-yellow-300 border-t-yellow-600 rounded-full animate-spin flex-shrink-0" />
-                    <span>Waking up the server — this may take up to 30 seconds on first load.</span>
+                    <span>
+                        Waking up the server — this may take up to 30 seconds on first load.
+                    </span>
                 </div>
             )}
             <div className="bg-white border border-gray-200 rounded shadow-sm p-8">
@@ -55,7 +57,7 @@ export default function LoginPage() {
                     </div>
                     <div>
                         <div className="font-semibold text-[#172b4d] text-base leading-tight">
-                            TicketTriage
+                            TT Desk
                         </div>
                         <div className="text-xs text-gray-500">AI Support Platform</div>
                     </div>
