@@ -190,7 +190,7 @@ export default function TicketTable({
 
     return (
         <div className="flex flex-col" style={{ height: `calc(100vh - ${toolbarTop}px - 41px)` }}>
-            <div className="relative flex items-center gap-2 px-6 py-3 bg-white border-b border-[#dfe1e6] flex-wrap flex-shrink-0 z-20">
+            <div className="relative flex items-center gap-2 px-6 py-3 bg-white border-t border-b border-[#dfe1e6] flex-wrap flex-shrink-0 z-20">
                 <button
                     onClick={onCreateClick}
                     className="h-8 px-3 bg-primary hover:bg-primary-dark text-white text-[13px] font-medium rounded transition-colors flex items-center gap-1.5"

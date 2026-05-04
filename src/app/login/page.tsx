@@ -7,6 +7,21 @@ import ColdStartBanner from "@/components/ui/ColdStartBanner";
 
 const SLOW_MS = 2000;
 
+const DEMO_USERS = [
+    { name: "Admin", masterId: "2000000", game: "Admin" },
+    { name: "Arthur Morgan", masterId: "2000001", game: "Red Dead Redemption 2" },
+    { name: "Dutch Van der Linde", masterId: "2000002", game: "Red Dead Redemption 2" },
+    { name: "John Marston", masterId: "2000003", game: "Red Dead Redemption 2" },
+    { name: "Deacon St. John", masterId: "2000004", game: "Days Gone" },
+    { name: "Sarah Whitaker", masterId: "2000005", game: "Days Gone" },
+    { name: "Joel Miller", masterId: "2000006", game: "The Last of Us" },
+    { name: "Ellie Williams", masterId: "2000007", game: "The Last of Us" },
+    { name: "Tommy Miller", masterId: "2000008", game: "The Last of Us" },
+    { name: "Abby Anderson", masterId: "2000009", game: "The Last of Us Part II" },
+    { name: "Kratos", masterId: "2000010", game: "God of War" },
+    { name: "Aloy", masterId: "2000011", game: "Horizon Zero Dawn" },
+] as const;
+
 export default function LoginPage() {
     const { login } = useAuth();
     const router = useRouter();
@@ -52,7 +67,9 @@ export default function LoginPage() {
                         TT
                     </div>
                     <div>
-                        <div className="font-semibold text-[#172b4d] text-base leading-tight">TT Desk</div>
+                        <div className="font-semibold text-[#172b4d] text-base leading-tight">
+                            TT Desk
+                        </div>
                         <div className="text-xs text-gray-500">AI Support Platform</div>
                     </div>
                 </div>
@@ -104,11 +121,27 @@ export default function LoginPage() {
                                 tabIndex={-1}
                             >
                                 {showPassword ? (
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                                    <svg
+                                        width="16"
+                                        height="16"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        strokeWidth="2"
+                                        strokeLinecap="round"
+                                    >
                                         <path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19M1 1l22 22" />
                                     </svg>
                                 ) : (
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                                    <svg
+                                        width="16"
+                                        height="16"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        strokeWidth="2"
+                                        strokeLinecap="round"
+                                    >
                                         <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
                                         <circle cx="12" cy="12" r="3" />
                                     </svg>
@@ -131,6 +164,35 @@ export default function LoginPage() {
                         {loading ? "Signing in..." : "Sign in"}
                     </button>
                 </form>
+            </div>
+
+            <div className="mt-3 bg-white border border-gray-200 rounded shadow-sm overflow-hidden">
+                <div className="px-4 py-2.5 border-b border-gray-100 flex items-center justify-between">
+                    <span className="text-xs font-semibold text-[#5e6c84] uppercase tracking-wide">
+                        Demo accounts
+                    </span>
+                    <span className="text-xs text-gray-400 font-mono">Secret1!</span>
+                </div>
+                <div className="divide-y divide-gray-50 max-h-52 overflow-y-auto">
+                    {DEMO_USERS.map((u) => (
+                        <button
+                            key={u.masterId}
+                            type="button"
+                            onClick={() => {
+                                setUsername(u.masterId);
+                                setPassword("Secret1!");
+                            }}
+                            className="w-full flex items-center justify-between gap-3 px-4 py-2 hover:bg-[#f4f5f7] text-left transition-colors"
+                        >
+                            <span className="text-[13px] font-medium text-[#172b4d] truncate">
+                                {u.name}
+                            </span>
+                            <span className="text-[11px] text-gray-400 flex-shrink-0">
+                                {u.game}
+                            </span>
+                        </button>
+                    ))}
+                </div>
             </div>
         </div>
     );

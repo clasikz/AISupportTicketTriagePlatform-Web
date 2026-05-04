@@ -140,6 +140,8 @@ export interface SpecialistResult {
   analysis: string;
   workflow: string | null;
   solutions: string[];
+  outOfScope?: boolean;
+  suggestedAgents?: string[];
 }
 
 export interface HumanAssignee {

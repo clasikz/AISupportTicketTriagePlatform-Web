@@ -55,12 +55,13 @@ function parseSpecialistResult(content: string): SpecialistResult | null {
     for (const a of attempts) {
         try {
             const p = JSON.parse(a) as Record<string, unknown>;
-            // Normalize PascalCase (C# default) and camelCase
             const workflow = (p.workflow ?? p.Workflow ?? null) as string | null;
             return {
                 analysis: (p.analysis ?? p.Analysis ?? "") as string,
                 workflow: workflow === "null" || workflow === "" ? null : workflow,
                 solutions: (p.solutions ?? p.Solutions ?? []) as string[],
+                outOfScope: (p.outOfScope ?? p.OutOfScope ?? false) as boolean,
+                suggestedAgents: (p.suggestedAgents ?? p.SuggestedAgents ?? []) as string[],
             };
         } catch {
             /* try next */
@@ -69,7 +70,17 @@ function parseSpecialistResult(content: string): SpecialistResult | null {
     return null;
 }
 
-function SpecialistCard({ agentId, content }: { agentId: string; content: string }) {
+function SpecialistCard({
+    agentId,
+    content,
+    createdAt,
+    isLatest,
+}: {
+    agentId: string;
+    content: string;
+    createdAt: string;
+    isLatest: boolean;
+}) {
     const result = parseSpecialistResult(content);
     if (!result) return null;
 
@@ -80,17 +91,63 @@ function SpecialistCard({ agentId, content }: { agentId: string; content: string
     };
     const name = AGENT_DISPLAY_NAMES[agentId] ?? agentId;
 
+    if (result.outOfScope) {
+        return (
+            <div className="rounded-lg border border-orange-200 bg-orange-50 overflow-hidden mb-3">
+                <div className="flex items-center gap-2 px-3 py-2 border-b border-orange-200">
+                    <div
+                        className="w-5 h-5 rounded-full flex-shrink-0 flex items-center justify-center text-[9px] font-bold"
+                        style={{ backgroundColor: colors.backgroundColor, color: colors.color }}
+                    >
+                        {colors.initials}
+                    </div>
+                    <span className="text-[12px] font-semibold text-[#172b4d]">{name}</span>
+                    <span className="text-[11px] text-orange-600 font-medium ml-auto">
+                        Out of scope
+                    </span>
+                </div>
+                <div className="px-3 py-2.5 space-y-2">
+                    <p className="text-[12px] text-orange-800">{result.analysis}</p>
+                    {result.suggestedAgents && result.suggestedAgents.length > 0 && (
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="text-[11px] text-orange-700 font-medium">Try:</span>
+                            {result.suggestedAgents.map((a) => (
+                                <span
+                                    key={a}
+                                    className="text-[11px] px-1.5 py-0.5 bg-white border border-orange-200 rounded text-orange-700 font-medium"
+                                >
+                                    {AGENT_DISPLAY_NAMES[a] ?? a}
+                                </span>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            </div>
+        );
+    }
+
     return (
-        <div className="rounded-lg border border-gray-200 bg-gray-50 overflow-hidden mb-4">
-            <div className="flex items-center gap-2 px-3 py-2 bg-white border-b border-gray-200">
+        <div
+            className={`rounded-lg border overflow-hidden mb-3 ${isLatest ? "border-blue-200 bg-blue-50/30" : "border-gray-200 bg-gray-50"}`}
+        >
+            <div
+                className={`flex items-center gap-2 px-3 py-2 border-b ${isLatest ? "bg-white border-blue-200" : "bg-white border-gray-200"}`}
+            >
                 <div
-                    className="w-6 h-6 rounded-full flex-shrink-0 flex items-center justify-center text-[9px] font-bold"
+                    className="w-5 h-5 rounded-full flex-shrink-0 flex items-center justify-center text-[9px] font-bold"
                     style={{ backgroundColor: colors.backgroundColor, color: colors.color }}
                 >
                     {colors.initials}
                 </div>
                 <span className="text-[12px] font-semibold text-[#172b4d]">{name}</span>
-                <span className="text-[11px] text-[#97a0af] ml-auto">Agent Analysis</span>
+                {isLatest && (
+                    <span className="text-[10px] px-1.5 py-0.5 bg-blue-100 text-blue-700 font-semibold rounded ml-1">
+                        Latest
+                    </span>
+                )}
+                <span className="text-[11px] text-[#97a0af] ml-auto">
+                    {formatRelativeTime(createdAt)}
+                </span>
             </div>
             <div className="px-3 py-3 space-y-3">
                 <p className="text-[13px] text-[#42526e] leading-relaxed">{result.analysis}</p>
@@ -124,6 +181,48 @@ function SpecialistCard({ agentId, content }: { agentId: string; content: string
                         </ul>
                     </div>
                 )}
+            </div>
+        </div>
+    );
+}
+
+function OlderAnalysesAccordion({ comments }: { comments: import("@/types").Comment[] }) {
+    const [open, setOpen] = useState(false);
+    return (
+        <div className="mb-3">
+            <button
+                type="button"
+                onClick={() => setOpen((v) => !v)}
+                className="w-full flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-200 bg-gray-50 hover:bg-gray-100 transition-colors text-left"
+            >
+                <svg
+                    width="12" height="12" viewBox="0 0 12 12" fill="none"
+                    stroke="currentColor" strokeWidth="2" strokeLinecap="round"
+                    className={`flex-shrink-0 text-[#5e6c84] transition-transform duration-200 ${open ? "rotate-180" : ""}`}
+                >
+                    <path d="M2 4l4 4 4-4" />
+                </svg>
+                <span className="text-[12px] text-[#5e6c84] font-medium">
+                    {comments.length} older {comments.length === 1 ? "analysis" : "analyses"}
+                </span>
+            </button>
+            <div
+                className="grid transition-[grid-template-rows] duration-200 ease-in-out"
+                style={{ gridTemplateRows: open ? "1fr" : "0fr" }}
+            >
+                <div className="overflow-hidden">
+                    <div className="mt-2">
+                        {comments.map((c) => (
+                            <SpecialistCard
+                                key={c.id}
+                                agentId={c.userId}
+                                content={c.content}
+                                createdAt={c.createdAt}
+                                isLatest={false}
+                            />
+                        ))}
+                    </div>
+                </div>
             </div>
         </div>
     );
@@ -281,13 +380,27 @@ export default function TicketSlideOver({ ticket, onClose, onUpdated, onMutated 
     );
 
     const hasAiTriage = allComments.some((c) => c.userId === "ai");
+    const currentAssignedTo = (data?.ticket ?? ticket).assignedTo;
+    const latestSpecialistComment = [...specialistComments].sort(
+        (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+    ).at(-1);
+    const currentAgentAnalyzed = latestSpecialistComment?.userId === currentAssignedTo;
+    const [analysisTimedOut, setAnalysisTimedOut] = useState(false);
 
     useEffect(() => {
-        if (!data || !hasAiTriage || specialistComments.length > 0) return;
+        setAnalysisTimedOut(false);
+        if (!hasAiTriage || currentAgentAnalyzed || !AI_AGENT_IDS.has(currentAssignedTo ?? ""))
+            return;
         const interval = setInterval(refetch, 3000);
-        const timeout = setTimeout(() => clearInterval(interval), 30000);
-        return () => { clearInterval(interval); clearTimeout(timeout); };
-    }, [data, hasAiTriage, specialistComments.length, refetch]);
+        const timeout = setTimeout(() => {
+            clearInterval(interval);
+            setAnalysisTimedOut(true);
+        }, 30000);
+        return () => {
+            clearInterval(interval);
+            clearTimeout(timeout);
+        };
+    }, [hasAiTriage, currentAgentAnalyzed, currentAssignedTo, refetch]);
 
     const resolveUserName = useMemo(() => createUserNameResolver(user, humans), [user, humans]);
 
@@ -412,9 +525,9 @@ export default function TicketSlideOver({ ticket, onClose, onUpdated, onMutated 
                                             <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[12px] font-medium bg-purple-100 text-purple-700 cursor-default">
                                                 {ticketData.priority}
                                             </span>
-                                            {ticketData.assignedTo && (
+                                            {ticketData.ai?.assignedTo && (
                                                 <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[12px] font-medium bg-purple-100 text-purple-700 cursor-default">
-                                                    {ticketData.assignedTo}
+                                                    {ticketData.ai.assignedTo}
                                                 </span>
                                             )}
                                         </div>
@@ -447,7 +560,10 @@ export default function TicketSlideOver({ ticket, onClose, onUpdated, onMutated 
                                         <div className="text-[11px] font-semibold text-[#5e6c84] uppercase tracking-[0.06em] mb-1.5">
                                             Assigned To
                                         </div>
-                                        <AgentChip agent={ticketData.assignedTo} resolveUserName={resolveUserName} />
+                                        <AgentChip
+                                            agent={ticketData.assignedTo}
+                                            resolveUserName={resolveUserName}
+                                        />
                                     </div>
                                     <div>
                                         <div className="text-[11px] font-semibold text-[#5e6c84] uppercase tracking-[0.06em] mb-1.5">
@@ -513,19 +629,58 @@ export default function TicketSlideOver({ ticket, onClose, onUpdated, onMutated 
                                 {tab === "comments" && (
                                     <>
                                         {/* Specialist analysis cards */}
-                                        {hasAiTriage && specialistComments.length === 0 && (
-                                            <div className="flex items-center gap-2 px-3 py-2.5 mb-4 rounded-lg border border-gray-200 bg-gray-50 text-[12px] text-[#5e6c84]">
-                                                <svg className="animate-spin flex-shrink-0" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
-                                                Agent analysis in progress...
-                                            </div>
-                                        )}
-                                        {specialistComments.map((c) => (
-                                            <SpecialistCard
-                                                key={c.id}
-                                                agentId={c.userId}
-                                                content={c.content}
-                                            />
-                                        ))}
+                                        {hasAiTriage &&
+                                            !currentAgentAnalyzed &&
+                                            AI_AGENT_IDS.has(currentAssignedTo ?? "") && (
+                                                analysisTimedOut ? (
+                                                    <div className="flex items-center gap-2 px-3 py-2.5 mb-4 rounded-lg border border-orange-200 bg-orange-50 text-[12px] text-orange-700">
+                                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="flex-shrink-0">
+                                                            <circle cx="12" cy="12" r="10" /><path d="M12 8v4M12 16h.01" />
+                                                        </svg>
+                                                        Analysis is taking longer than expected. Reassign to retry.
+                                                    </div>
+                                                ) : (
+                                                    <div className="flex items-center gap-2 px-3 py-2.5 mb-4 rounded-lg border border-gray-200 bg-gray-50 text-[12px] text-[#5e6c84]">
+                                                        <svg
+                                                            className="animate-spin flex-shrink-0"
+                                                            width="13"
+                                                            height="13"
+                                                            viewBox="0 0 24 24"
+                                                            fill="none"
+                                                            stroke="currentColor"
+                                                            strokeWidth="2.5"
+                                                        >
+                                                            <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
+                                                        </svg>
+                                                        Agent analysis in progress...
+                                                    </div>
+                                                )
+                                            )}
+                                        {(() => {
+                                            const sorted = [...specialistComments].sort(
+                                                (a, b) =>
+                                                    new Date(a.createdAt).getTime() -
+                                                    new Date(b.createdAt).getTime(),
+                                            );
+                                            const latest = sorted[sorted.length - 1];
+                                            const older = sorted.slice(0, -1).reverse();
+                                            return (
+                                                <>
+                                                    {latest && (
+                                                        <SpecialistCard
+                                                            key={latest.id}
+                                                            agentId={latest.userId}
+                                                            content={latest.content}
+                                                            createdAt={latest.createdAt}
+                                                            isLatest
+                                                        />
+                                                    )}
+                                                    {older.length > 0 && (
+                                                        <OlderAnalysesAccordion comments={older} />
+                                                    )}
+                                                </>
+                                            );
+                                        })()}
 
                                         {/* User comment form */}
                                         <form
@@ -578,9 +733,10 @@ export default function TicketSlideOver({ ticket, onClose, onUpdated, onMutated 
                                                     ? `${user!.firstName} ${user!.lastName}`
                                                     : resolveUserName(c.userId);
                                                 const nameParts = displayName.trim().split(" ");
-                                                const initials = nameParts.length >= 2
-                                                    ? `${nameParts[0][0]}${nameParts[nameParts.length - 1][0]}`
-                                                    : displayName.slice(0, 2);
+                                                const initials =
+                                                    nameParts.length >= 2
+                                                        ? `${nameParts[0][0]}${nameParts[nameParts.length - 1][0]}`
+                                                        : displayName.slice(0, 2);
                                                 const hc = getHumanColor(c.userId);
                                                 return (
                                                     <div key={c.id} className="flex gap-2.5 mb-4">
@@ -597,12 +753,18 @@ export default function TicketSlideOver({ ticket, onClose, onUpdated, onMutated 
                                                                         {displayName}
                                                                     </span>
                                                                     <span className="text-[11px] text-[#8993a4] ml-2">
-                                                                        {formatRelativeTime(c.createdAt)}
+                                                                        {formatRelativeTime(
+                                                                            c.createdAt,
+                                                                        )}
                                                                     </span>
                                                                 </div>
                                                                 {isOwn && (
                                                                     <button
-                                                                        onClick={() => handleDeleteComment(c.id)}
+                                                                        onClick={() =>
+                                                                            handleDeleteComment(
+                                                                                c.id,
+                                                                            )
+                                                                        }
                                                                         className="text-[11px] text-[#97a0af] hover:text-red-500 transition-colors"
                                                                     >
                                                                         Delete
@@ -826,7 +988,10 @@ export default function TicketSlideOver({ ticket, onClose, onUpdated, onMutated 
                                     >
                                         <div
                                             className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold flex-shrink-0"
-                                            style={{ backgroundColor: colors.backgroundColor, color: colors.color }}
+                                            style={{
+                                                backgroundColor: colors.backgroundColor,
+                                                color: colors.color,
+                                            }}
                                         >
                                             {colors.initials}
                                         </div>
