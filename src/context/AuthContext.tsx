@@ -8,18 +8,18 @@ import {
   useCallback,
   ReactNode,
 } from "react";
-import { AuthTokens } from "@/types";
+import { User } from "@/types";
 import { endpoints } from "@/lib/endpoints";
 
 interface AuthState {
-  userId: string | null;
+  user: User | null;
   accessToken: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
 }
 
 interface AuthContextValue extends AuthState {
-  login: (userId: string) => Promise<void>;
+  login: (username: string, password: string) => Promise<void>;
   logout: () => void;
 }
 
@@ -27,57 +27,56 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<AuthState>({
-    userId: null,
+    user: null,
     accessToken: null,
     isAuthenticated: false,
     isLoading: true,
   });
 
   useEffect(() => {
-    const userId = localStorage.getItem("userId");
+    const raw = localStorage.getItem("user");
     const accessToken = localStorage.getItem("accessToken");
+    const user: User | null = raw ? JSON.parse(raw) : null;
     setState({
-      userId,
+      user,
       accessToken,
-      isAuthenticated: Boolean(userId && accessToken),
+      isAuthenticated: Boolean(user && accessToken),
       isLoading: false,
     });
   }, []);
 
-  const login = useCallback(async (userId: string) => {
+  const login = useCallback(async (username: string, password: string) => {
     const res = await fetch(endpoints.login, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId }),
+      body: JSON.stringify({ username, password }),
     });
 
     if (!res.ok) {
-      throw new Error("Login failed");
+      const body = await res.json().catch(() => ({}));
+      throw new Error(body?.error ?? "Invalid credentials.");
     }
 
-    const tokens: AuthTokens = await res.json();
-    localStorage.setItem("userId", userId);
-    localStorage.setItem("accessToken", tokens.accessToken);
-    localStorage.setItem("refreshToken", tokens.refreshToken);
+    const data = await res.json();
+    const user: User = data.user;
+
+    localStorage.setItem("user", JSON.stringify(user));
+    localStorage.setItem("accessToken", data.accessToken);
+    localStorage.setItem("refreshToken", data.refreshToken);
 
     setState({
-      userId,
-      accessToken: tokens.accessToken,
+      user,
+      accessToken: data.accessToken,
       isAuthenticated: true,
       isLoading: false,
     });
   }, []);
 
   const logout = useCallback(() => {
-    localStorage.removeItem("userId");
+    localStorage.removeItem("user");
     localStorage.removeItem("accessToken");
     localStorage.removeItem("refreshToken");
-    setState({
-      userId: null,
-      accessToken: null,
-      isAuthenticated: false,
-      isLoading: false,
-    });
+    setState({ user: null, accessToken: null, isAuthenticated: false, isLoading: false });
     window.location.href = "/login";
   }, []);
 

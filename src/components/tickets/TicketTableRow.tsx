@@ -9,9 +9,10 @@ interface Props {
     ticket: Ticket;
     selected: boolean;
     onClick: () => void;
+    resolveUserName: (id: string) => string;
 }
 
-export default function TicketTableRow({ ticket, selected, onClick }: Props) {
+export default function TicketTableRow({ ticket, selected, onClick, resolveUserName }: Props) {
     const ticketNum = ticket.id.slice(-4).toUpperCase();
     const cellBase =
         "py-2.5 min-h-[52px] px-3 border-b border-[#f4f5f7] border-r border-r-[#f0f1f3] transition-colors align-top";
@@ -26,7 +27,7 @@ export default function TicketTableRow({ ticket, selected, onClick }: Props) {
                 <div className="text-[13px] font-medium text-[#172b4d] leading-snug">
                     {ticket.title}
                 </div>
-                <div className="text-[11px] text-[#8993a4] mt-0.5">{ticket.userId}</div>
+                <div className="text-[11px] text-[#8993a4] mt-0.5">{resolveUserName(ticket.userId)}</div>
             </td>
             <td className={`${cellBase} ${cellBg}`}>
                 <StatusBadge status={ticket.status as TicketStatus} />
@@ -38,7 +39,7 @@ export default function TicketTableRow({ ticket, selected, onClick }: Props) {
                 <CategoryBadge category={ticket.category} />
             </td>
             <td className={`${cellBase} ${cellBg}`}>
-                <AgentChip agent={ticket.assignedTo} />
+                <AgentChip agent={ticket.assignedTo} resolveUserName={resolveUserName} />
             </td>
             <td className={`${cellBase} ${cellBg}`}>
                 {ticket.dueDate ? (
@@ -52,13 +53,6 @@ export default function TicketTableRow({ ticket, selected, onClick }: Props) {
             <td className={`${cellBase} ${cellBg}`}>
                 <span className="text-[12px] text-[#5e6c84]">
                     {formatRelativeTime(ticket.createdAt)}
-                </span>
-            </td>
-            <td
-                className={`py-2.5 min-h-[52px] px-3 border-b border-[#f4f5f7] text-center transition-colors align-top ${cellBg}`}
-            >
-                <span className="inline-flex items-center gap-1 h-5 px-2 bg-purple-50 text-purple-700 rounded-full text-[11px] font-medium">
-                    <span className="text-base">✦</span> Auto
                 </span>
             </td>
         </tr>

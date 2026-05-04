@@ -32,7 +32,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
         dismissTimer.current = setTimeout(() => {
             setToast((t) => (t?.id === id ? { ...t, visible: false } : t));
             setTimeout(() => setToast((t) => (t?.id === id ? null : t)), 300);
-        }, 30000);
+        }, 5000);
     }, []);
 
     return (

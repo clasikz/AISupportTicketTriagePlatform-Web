@@ -10,7 +10,9 @@ export const endpoints = {
   deleteTicket: (id: string) => `${BASE}/api/tickets/${id}`,
   assignTicket: (id: string) => `${BASE}/api/tickets/${id}/assign`,
   comments: (id: string) => `${BASE}/api/tickets/${id}/comments`,
+  deleteComment: (ticketId: string, commentId: string) => `${BASE}/api/tickets/${ticketId}/comments/${commentId}`,
   activities: (id: string) => `${BASE}/api/tickets/${id}/activities`,
-stats: `${BASE}/api/tickets/stats`,
+  stats: `${BASE}/api/tickets/stats`,
   dashboard: `${BASE}/api/tickets/dashboard`,
+  assignees: `${BASE}/api/assignees`,
 };

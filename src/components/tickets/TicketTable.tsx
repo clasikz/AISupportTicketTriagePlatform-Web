@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useCallback, useRef, useEffect, useMemo } from "react";
 import {
     Ticket,
     TicketFilters,
@@ -11,6 +11,9 @@ import {
 } from "@/types";
 import TicketTableRow from "./TicketTableRow";
 import TableSkeleton from "@/components/skeletons/TableSkeleton";
+import { useAssignees } from "@/hooks/useAssignees";
+import { useAuth } from "@/context/AuthContext";
+import { createUserNameResolver } from "@/lib/utils";
 
 interface Props {
     tickets: Ticket[];
@@ -36,9 +39,8 @@ const COLUMNS = [
     "Assigned To",
     "Due Date",
     "Created",
-    "AI",
 ];
-const DEFAULT_COL_WIDTHS = [84, 260, 130, 88, 110, 132, 112, 110, 72];
+const DEFAULT_COL_WIDTHS = [84, 260, 130, 88, 110, 132, 112, 110];
 const COLUMN_SORT_KEYS: (string | null)[] = [
     null,
     "title",
@@ -48,7 +50,6 @@ const COLUMN_SORT_KEYS: (string | null)[] = [
     "assignedTo",
     "dueDate",
     "createdAt",
-    null,
 ];
 
 const SORT_OPTIONS: { label: string; value: string }[] = [
@@ -95,6 +96,10 @@ export default function TicketTable({
     const colWidthsRef = useRef(colWidths);
     colWidthsRef.current = colWidths;
     const totalPages = Math.ceil(total / pageSize);
+
+    const { humans } = useAssignees();
+    const { user } = useAuth();
+    const resolveUserName = useMemo(() => createUserNameResolver(user, humans), [user, humans]);
 
     useEffect(() => {
         setColWidths(loadColWidths());
@@ -459,7 +464,7 @@ export default function TicketTable({
                                         <col
                                             key={i}
                                             style={
-                                                i === COLUMNS.length - 1
+                                                i === COLUMNS.length
                                                     ? {}
                                                     : !hasManualResize && i === 1
                                                       ? {}
@@ -534,7 +539,7 @@ export default function TicketTable({
                                                             onMouseDown={(e) =>
                                                                 startColResize(i, e)
                                                             }
-                                                            className="absolute top-0 right-0 bottom-0 w-3 cursor-col-resize flex items-center justify-center group"
+                                                            className="absolute top-0 right-0 bottom-0 w-1 cursor-col-resize flex items-center justify-end group"
                                                             onClick={(e) => e.stopPropagation()}
                                                         >
                                                             <div className="w-px h-4 bg-[#dfe1e6] group-hover:bg-primary/50 group-hover:w-0.5 transition-all" />
@@ -562,6 +567,7 @@ export default function TicketTable({
                                                 ticket={t}
                                                 selected={selectedId === t.id}
                                                 onClick={() => onSelect(t)}
+                                                resolveUserName={resolveUserName}
                                             />
                                         ))
                                     )}

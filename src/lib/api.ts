@@ -39,7 +39,7 @@ async function refreshTokens(): Promise<string | null> {
       if (!res.ok) {
         localStorage.removeItem("accessToken");
         localStorage.removeItem("refreshToken");
-        localStorage.removeItem("userId");
+        localStorage.removeItem("user");
         window.location.href = "/login";
         return null;
       }

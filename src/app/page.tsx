@@ -150,7 +150,7 @@ export default function BoardPage() {
                     ticket={selectedTicket}
                     onClose={() => setSelectedTicket(null)}
                     onUpdated={handleTicketUpdated}
-                    onMutated={refetchStats}
+                    onMutated={() => { refetch(); refetchStats(); }}
                 />
             )}
 

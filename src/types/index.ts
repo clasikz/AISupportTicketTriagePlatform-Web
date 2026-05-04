@@ -122,6 +122,39 @@ export interface AuthTokens {
   refreshToken: string;
 }
 
+export enum UserRole {
+  Agent = 0,
+  Customer = 1,
+}
+
+export interface User {
+  masterId: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  role: UserRole;
+  isAdmin: boolean;
+}
+
+export interface SpecialistResult {
+  analysis: string;
+  workflow: string | null;
+  solutions: string[];
+}
+
+export interface HumanAssignee {
+  id: string;
+  name: string;
+  role: string;
+  isAdmin: boolean;
+}
+
+export interface AiAgent {
+  id: string;
+  name: string;
+  description: string;
+}
+
 export interface Stats {
   total: number;
   open: number;

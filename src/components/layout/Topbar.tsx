@@ -4,7 +4,9 @@ import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 
 export default function Topbar() {
-    const { userId, logout } = useAuth();
+    const { user, logout } = useAuth();
+
+    const displayName = user ? `${user.firstName} ${user.lastName}` : "";
 
     return (
         <header className="fixed top-0 left-0 right-0 h-12 bg-primary z-50 flex items-center px-4 gap-2 shadow-md">
@@ -31,7 +33,14 @@ export default function Topbar() {
             </nav>
 
             <div className="ml-auto flex items-center gap-3">
-                <span className="text-white/85 text-xs">{userId}</span>
+                {displayName && (
+                    <div className="flex items-center gap-2">
+                        <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0">
+                            {user!.firstName[0]}{user!.lastName[0]}
+                        </div>
+                        <span className="text-white/85 text-xs">{displayName}</span>
+                    </div>
+                )}
                 <button
                     onClick={logout}
                     className="h-7 px-2.5 rounded border border-white/25 text-white/85 hover:text-white hover:bg-white/12 text-xs transition-colors"
