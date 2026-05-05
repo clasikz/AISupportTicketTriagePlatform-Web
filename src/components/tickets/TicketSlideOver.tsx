@@ -1002,12 +1002,14 @@ export default function TicketSlideOver({ ticket, onClose, onUpdated, onMutated 
                         </div>
                     </div>
 
-                    <button
-                        onClick={handleDelete}
-                        className="h-8 px-3 ml-auto bg-white border border-red-200 text-red-600 text-[13px] font-medium rounded hover:bg-red-50 transition-colors"
-                    >
-                        Delete
-                    </button>
+                    {user?.isAdmin && (
+                        <button
+                            onClick={handleDelete}
+                            className="h-8 px-3 ml-auto bg-white border border-red-200 text-red-600 text-[13px] font-medium rounded hover:bg-red-50 transition-colors"
+                        >
+                            Delete
+                        </button>
+                    )}
                 </div>
 
                 {toast && (

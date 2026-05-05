@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useAuth } from "@/context/AuthContext";
 
 const navItems = [
     {
@@ -29,6 +30,18 @@ const navItems = [
     },
 ];
 
+const adminNavItems = [
+    {
+        label: "Users",
+        href: "/users",
+        icon: (
+            <svg width="24" height="24" viewBox="0 0 16 16" fill="currentColor">
+                <path d="M8 8a3 3 0 100-6 3 3 0 000 6zm-5 6a5 5 0 0110 0H3z" />
+            </svg>
+        ),
+    },
+];
+
 interface Props {
     width: number;
     onStartDrag: (e: React.MouseEvent) => void;
@@ -36,6 +49,7 @@ interface Props {
 
 export default function Sidebar({ width, onStartDrag }: Props) {
     const pathname = usePathname();
+    const { user } = useAuth();
 
     return (
         <aside
@@ -84,6 +98,34 @@ export default function Sidebar({ width, onStartDrag }: Props) {
                         </Link>
                     );
                 })}
+                {user?.isAdmin && (
+                    <>
+                        <div className="px-4 py-2 pb-1 mt-2 text-[11px] font-semibold text-[#5e6c84] uppercase tracking-[0.07em]">
+                            Admin
+                        </div>
+                        {adminNavItems.map((item) => {
+                            const active = pathname === item.href;
+                            return (
+                                <Link
+                                    key={item.href}
+                                    href={item.href}
+                                    className={`flex items-center gap-3 h-10 px-3 mx-4 rounded text-[13px] transition-colors ${
+                                        active
+                                            ? "bg-primary-light text-primary font-medium"
+                                            : "text-[#172b4d] hover:bg-[#ebecf0]"
+                                    }`}
+                                >
+                                    <span
+                                        className={`flex-shrink-0 ${active ? "opacity-100" : "opacity-60"}`}
+                                    >
+                                        {item.icon}
+                                    </span>
+                                    {item.label}
+                                </Link>
+                            );
+                        })}
+                    </>
+                )}
             </nav>
 
             <div
