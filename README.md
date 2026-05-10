@@ -323,6 +323,7 @@ Footer "Reassign" dropdown
 
 - **Ticket board** — paginated table with search, multi-filter (status, priority, category, agent), multi-column sort, resizable columns persisted to `localStorage`
 - **Ticket detail** — right slide-over with AI triage banner (category + priority + triage's agent suggestion), metadata grid, status/reassign dropdowns, comments tab, activity history tab
+- **Rich-text description + comments with image paste** — both the new-ticket description field and the comment input use a `contentEditable` rich-text editor (no library, ~250 lines of React + DOMPurify). Paste a screenshot directly from your clipboard and it uploads to Supabase storage in the background, embedding inline as a permanent public URL. Click the image to select it, drag the corner handle to resize (locked aspect ratio), or drag the bottom-right of the field to grow the input. Images render inline on read with click-to-enlarge lightbox. Output is sanitized through DOMPurify on the client and `HtmlSanitizer` on the server, allowlisted to `<p>`, `<br>`, `<img>`, `<strong>`, `<em>`, `<b>`, `<i>` with HTTPS-only image sources.
 - **Specialist analysis** — per-agent AI analysis cards with analysis text, optional ASCII workflow diagram, and recommended steps; older analyses collapsed in accordion (newest first)
 - **Out-of-scope detection** — agent cards show orange "Outside my domain" when category is outside their domain, with triage-recommended agent as suggestion
 - **Create ticket** — modal submits to backend; AI triage result shown immediately; specialist analysis appears via polling
@@ -331,6 +332,8 @@ Footer "Reassign" dropdown
 - **Drag-to-resize** — sidebar and slide-over panel widths draggable and persisted
 - **Cold start banner** — yellow banner after 4s slow response (Render.com free-tier warm-up)
 - **Silent token refresh** — 401s auto-refresh with no concurrent duplicate requests
+
+> **Note on AI + pasted images.** The current Groq triage and specialist models (`llama-3.1-8b-instant` and `llama-3.3-70b-versatile`) are text-only. When the AI reads a description or specialist prompt, embedded images are replaced with a literal `[image]` token so the model knows a screenshot is present, but it cannot see what is in the screenshot. The image-paste feature is shipped as a UX concept demo at this stage. Switching the specialist agent to a vision-capable Groq model (e.g. `meta-llama/llama-4-maverick-17b-128e-instruct`) and sending the image URLs as multimodal content blocks would close the gap; the storage and frontend pieces are already in place.
 
 ---
 

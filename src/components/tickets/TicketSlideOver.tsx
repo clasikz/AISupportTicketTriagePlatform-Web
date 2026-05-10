@@ -30,6 +30,10 @@ import PriorityBadge from "./PriorityBadge";
 import CategoryBadge from "./CategoryBadge";
 import AgentChip from "./AgentChip";
 import SlideOverSkeleton from "@/components/skeletons/SlideOverSkeleton";
+import RichTextEditor from "./RichTextEditor";
+import RichTextView from "./RichTextView";
+import { sanitizeRichHtml } from "@/lib/sanitizeHtml";
+import { visibleTextLength, hasImage } from "@/lib/visibleTextLength";
 
 interface Props {
     ticket: Ticket;
@@ -337,12 +341,14 @@ export default function TicketSlideOver({ ticket, onClose, onUpdated, onMutated 
 
     async function handleAddComment(e: React.FormEvent) {
         e.preventDefault();
-        if (!commentText.trim()) return;
+        // Comment is rich-text HTML — accept either visible text or an embedded image as content.
+        if (visibleTextLength(commentText) === 0 && !hasImage(commentText)) return;
         setSubmittingComment(true);
         try {
+            const safeContent = sanitizeRichHtml(commentText);
             const res = await apiFetch(endpoints.comments(ticket.id), {
                 method: "POST",
-                body: JSON.stringify({ content: commentText.trim() }),
+                body: JSON.stringify({ content: safeContent }),
             });
             if (!res.ok) {
                 const errText = await res.text().catch(() => "");
@@ -596,9 +602,10 @@ export default function TicketSlideOver({ ticket, onClose, onUpdated, onMutated 
                                 <div className="text-[11px] font-semibold text-[#5e6c84] uppercase tracking-[0.06em] mb-2">
                                     Description
                                 </div>
-                                <p className="text-[13px] text-[#42526e] leading-relaxed whitespace-pre-wrap">
-                                    {ticketData.description}
-                                </p>
+                                <RichTextView
+                                    content={ticketData.description}
+                                    className="leading-relaxed text-[#42526e]"
+                                />
                             </div>
 
                             {/* Tabs */}
@@ -703,14 +710,14 @@ export default function TicketSlideOver({ ticket, onClose, onUpdated, onMutated 
                                                 );
                                             })()}
                                             <div className="flex-1">
-                                                <textarea
+                                                <RichTextEditor
                                                     value={commentText}
-                                                    onChange={(e) => setCommentText(e.target.value)}
-                                                    placeholder="Add a comment..."
-                                                    rows={2}
-                                                    className="w-full px-3 py-2 border border-[#dfe1e6] rounded text-[13px] text-[#172b4d] placeholder:text-[#97a0af] bg-[#fafbfc] focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 resize-none"
+                                                    onChange={setCommentText}
+                                                    placeholder="Add a comment. Paste a screenshot to include an image."
+                                                    minHeight={80}
                                                 />
-                                                {commentText.trim() && (
+                                                {(visibleTextLength(commentText) > 0 ||
+                                                    hasImage(commentText)) && (
                                                     <button
                                                         type="submit"
                                                         disabled={submittingComment}
@@ -771,9 +778,10 @@ export default function TicketSlideOver({ ticket, onClose, onUpdated, onMutated 
                                                                     </button>
                                                                 )}
                                                             </div>
-                                                            <p className="text-[13px] text-[#42526e] mt-0.5 leading-relaxed">
-                                                                {c.content}
-                                                            </p>
+                                                            <RichTextView
+                                                                content={c.content}
+                                                                className="mt-0.5 leading-relaxed text-[#42526e]"
+                                                            />
                                                         </div>
                                                     </div>
                                                 );
@@ -932,7 +940,7 @@ export default function TicketSlideOver({ ticket, onClose, onUpdated, onMutated 
                             </svg>
                         </button>
                         <div
-                            className={`absolute bottom-full left-0 mb-1 w-52 bg-white border border-[#dfe1e6] rounded shadow-lg z-50 py-1 transition-all duration-150 origin-bottom ${reassignOpen ? "opacity-100 scale-100 translate-y-0" : "opacity-0 scale-95 translate-y-1 pointer-events-none"}`}
+                            className={`absolute bottom-full left-0 mb-1 w-52 bg-white border border-[#dfe1e6] rounded shadow-lg z-50 py-1 transition-all duration-150 origin-bottom max-h-72 overflow-y-auto ${reassignOpen ? "opacity-100 scale-100 translate-y-0" : "opacity-0 scale-95 translate-y-1 pointer-events-none"}`}
                         >
                             {humans.length > 0 && (
                                 <>

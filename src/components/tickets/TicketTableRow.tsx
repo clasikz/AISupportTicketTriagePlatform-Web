@@ -15,11 +15,14 @@ interface Props {
 export default function TicketTableRow({ ticket, selected, onClick, resolveUserName }: Props) {
     const ticketNum = ticket.id.slice(-4).toUpperCase();
     const cellBase =
-        "py-2.5 min-h-[52px] px-3 border-b border-[#f4f5f7] border-r border-r-[#f0f1f3] transition-colors align-top";
+        "py-2.5 min-h-[52px] px-3 border-b border-[#f4f5f7] border-r border-r-[#f0f1f3] transition-colors duration-150 align-top";
     const cellBg = selected ? "bg-[#e8f0fe]" : "group-hover:bg-[#eef0ff]";
 
     return (
-        <tr onClick={onClick} className="cursor-pointer group">
+        <tr
+            onClick={onClick}
+            className="cursor-pointer group transition-shadow duration-150 hover:shadow-[inset_3px_0_0_0_#0052cc]"
+        >
             <td className={`${cellBase} ${cellBg}`}>
                 <span className="text-[11px] text-[#5e6c84] font-mono">TT-{ticketNum}</span>
             </td>

@@ -5,9 +5,12 @@ import { Ticket, AiResult, CreateTicketResponse } from "@/types";
 import { apiFetch } from "@/lib/api";
 import { endpoints } from "@/lib/endpoints";
 import { formatDueDate, normalizeTicket } from "@/lib/utils";
+import { visibleTextLength, hasImage } from "@/lib/visibleTextLength";
+import { sanitizeRichHtml } from "@/lib/sanitizeHtml";
 import PriorityBadge from "./PriorityBadge";
 import CategoryBadge from "./CategoryBadge";
 import AgentChip from "./AgentChip";
+import RichTextEditor from "./RichTextEditor";
 
 interface Props {
     onClose: () => void;
@@ -28,19 +31,26 @@ export default function CreateTicketModal({ onClose, onCreated }: Props) {
         return () => cancelAnimationFrame(id);
     }, []);
 
+    const visibleLen = visibleTextLength(description);
+    const descHasImage = hasImage(description);
+    // Either 10+ chars of text OR at least one image counts as enough content.
+    const descContentOk = visibleLen >= 10 || descHasImage;
+
     const titleError =
         title.length > 0 && (title.length < 3 || title.length > 150)
             ? `Title must be 3–150 characters (${title.length})`
             : "";
     const descError =
-        description.length > 0 && (description.length < 10 || description.length > 4000)
-            ? `Description must be 10–4000 characters (${description.length})`
+        visibleLen > 0 && !descContentOk
+            ? `Description must be at least 10 characters (or include an image).`
+            : description.length > 50000
+            ? `Description is too long (${description.length} / 50000).`
             : "";
     const canSubmit =
         title.length >= 3 &&
         title.length <= 150 &&
-        description.length >= 10 &&
-        description.length <= 4000 &&
+        descContentOk &&
+        description.length <= 50000 &&
         !submitting;
 
     async function handleSubmit(e: FormEvent) {
@@ -50,9 +60,11 @@ export default function CreateTicketModal({ onClose, onCreated }: Props) {
         setSubmitting(true);
         setError("");
         try {
+            // Final sanitize on submit. Backend re-sanitizes as defense-in-depth.
+            const safeDescription = sanitizeRichHtml(description);
             const res = await apiFetch(endpoints.createTicket, {
                 method: "POST",
-                body: JSON.stringify({ title: title.trim(), description: description.trim() }),
+                body: JSON.stringify({ title: title.trim(), description: safeDescription }),
             });
             if (!res.ok) throw new Error("Failed to create ticket");
             const response: CreateTicketResponse = await res.json();
@@ -185,18 +197,18 @@ export default function CreateTicketModal({ onClose, onCreated }: Props) {
                                 <label className="block text-[11px] font-semibold text-[#5e6c84] uppercase tracking-wide mb-1.5">
                                     Description <span className="text-red-500">*</span>
                                 </label>
-                                <textarea
+                                <RichTextEditor
                                     value={description}
-                                    onChange={(e) => setDescription(e.target.value)}
-                                    placeholder="Detailed description of the issue..."
-                                    rows={5}
-                                    className="w-full px-3 py-2 border border-[#dfe1e6] rounded text-[13px] text-[#172b4d] placeholder:text-[#97a0af] focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 resize-none"
+                                    onChange={setDescription}
+                                    placeholder="Detailed description of the issue. Paste a screenshot to include an image."
+                                    minHeight={140}
                                 />
                                 {descError && (
                                     <p className="text-[11px] text-red-500 mt-1">{descError}</p>
                                 )}
                                 <p className="text-[11px] text-[#97a0af] mt-1 text-right">
-                                    {description.length}/4000
+                                    {visibleLen} chars
+                                    {descHasImage ? " + image(s)" : ""}
                                 </p>
                             </div>
 
